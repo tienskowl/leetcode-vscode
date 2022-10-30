@@ -13,7 +13,7 @@ import { normalizeQuestions } from '../common/util'
 export const resolverCn: ResolverType = {
 	Query() {
 		//'Company', 'Favorite',
-		return ['All', 'Difficulty', 'Category', 'Tag', 'Contest', 'TodayRecord'].map((v) => ({
+		return ['All', 'Difficulty', 'Category', 'Tag', 'Contest', 'TodayRecord', 'Top100'].map((v) => ({
 			key: v.toLowerCase(),
 			type: 'Catalogue',
 			label: v,
@@ -86,6 +86,22 @@ export const resolverCn: ResolverType = {
 				},
 			}))
 		},
+		async top100() {
+			const res = await api.fetchList('2cktkvj')
+			const questions = res.questions
+			return questions.map((v) => {
+				return {
+					type: 'Question',
+					label: v.frontendQuestionId + '.' + v.titleCn,
+					isAC: v.userStatus === 'FINISH', //NOT_START
+					isLast: true,
+					id: 'top100' + v.frontendQuestionId,
+					param: {
+						titleSlug: v.titleSlug,
+					},
+				}
+			})
+		},
 	},
 	Category: {
 		async algorithm() {
@@ -153,6 +169,15 @@ export const resolverCn: ResolverType = {
 					weekname: titleSlug,
 				},
 			}))
+		},
+	},
+	List: {
+		async listkey({ tag }) {
+			if (!tag) {
+				return []
+			}
+			const questions = await getQuestionsByTag(tag)
+			return normalizeQuestions(questions, 'tag' + tag)
 		},
 	},
 }

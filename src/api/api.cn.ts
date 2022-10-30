@@ -309,6 +309,20 @@ const config = {
 			query: 'query mySubmissionDetail($id: ID!) {\n  submissionDetail(submissionId: $id) {\n    id\n    code\n    runtime\n    memory\n    rawMemory\n    statusDisplay\n    timestamp\n    lang\n    passedTestCaseCnt\n    totalTestCaseCnt\n    sourceUrl\n    question {\n      titleSlug\n      title\n      translatedTitle\n      questionId\n      __typename\n    }\n    ... on GeneralSubmissionNode {\n      outputDetail {\n        codeOutput\n        expectedOutput\n        input\n        compileError\n        runtimeError\n        lastTestcase\n        __typename\n      }\n      __typename\n    }\n    submissionComment {\n      comment\n      flagType\n      __typename\n    }\n    __typename\n  }\n}\n',
 		}
 	},
+	getList(options: any) {
+		const { cat } = options
+		return {
+			// operationName: 'mySubmissionDetail',
+			query: '\n    query problemsetQuestionList($categorySlug: String, $limit: Int, $skip: Int, $filters: QuestionListFilterInput) {\n  problemsetQuestionList(\n    categorySlug: $categorySlug\n    limit: $limit\n    skip: $skip\n    filters: $filters\n  ) {\n    hasMore\n    total\n    questions {\n      acRate\n      difficulty\n      freqBar\n      frontendQuestionId\n      isFavor\n      paidOnly\n      solutionNum\n      status\n      title\n      titleCn\n      titleSlug\n      topicTags {\n        name\n        nameTranslated\n        id\n        slug\n      }\n      extra {\n        hasVideoSolution\n        topCompanyTags {\n          imgUrl\n          slug\n          numSubscribed\n        }\n      }\n    }\n  }\n}\n    ',
+			variables: {
+				categorySlug: '',
+				filters: {
+					listId: cat,
+				},
+				limit: 1000,
+			},
+		}
+	},
 }
 
 export const api = {
@@ -319,6 +333,10 @@ export const api = {
 	},
 	fetchCategorieQuestions(categorie: Category): Promise<Problems> {
 		return request<Problems>(config.getQuestionsByCategory(categorie))
+	},
+	fetchList(cat: string): Promise<any> {
+		// @ts-ignore
+		return graphql<any>(config.getList({ cat })).then((data) => data.problemsetQuestionList)
 	},
 	fetchContests() {
 		return graphql<ContestData>(config.contests).then((data) => data.allContests)
@@ -389,6 +407,7 @@ export async function getAllQuestions(): Promise<ConciseQuestion[]> {
 export async function refreshQuestions(): Promise<void> {
 	let questions: ConciseQuestion[] = []
 	const data = await api.fetchCategorieQuestions('all')
+	console.log(data)
 	questions = handleCategorieQuestions(data)
 	await setTranslations(questions)
 	sortQuestions(questions)
